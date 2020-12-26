@@ -40,8 +40,8 @@ class FinalAI:
 
         attack_probs = []
         for source, target in nodes:
-            attack_dice = board.get_area(source.get_name()).get_dice()
-            defender_dice = board.get_area(target.get_name()).get_dice()
+            attack_dice = source.get_dice()
+            defender_dice = target.get_dice()
             attack_probs.append(attack_succcess_probability(attack_dice, defender_dice))
 
         nodes_scores = []
@@ -80,8 +80,8 @@ class FinalAI:
         #calculate attack probs
         attack_probs = []
         for source, target in nodes:
-            attack_dice = board.get_area(source.get_name()).get_dice()
-            defender_dice = board.get_area(target.get_name()).get_dice()
+            attack_dice = source.get_dice()
+            defender_dice = target.get_dice()
             attack_probs.append(attack_succcess_probability(attack_dice, defender_dice))
 
         nodes_scores = []
