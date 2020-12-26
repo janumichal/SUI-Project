@@ -10,8 +10,6 @@ from dicewars.client.ai_driver import BattleCommand, EndTurnCommand
 
 class FinalAI:
     """xdufko02 player agent
-
-    This agent blabla...
     """
 
     def __init__(self, player_name, board, players_order):
@@ -22,38 +20,43 @@ class FinalAI:
         """
         self.player_name = player_name
         self.logger = logging.getLogger('AI')
+        self.order = players_order
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
         """AI agent's turn
-
-
         """
-
         if nb_moves_this_turn > 3:
             return EndTurnCommand()
 
-        depth = 2
+        depth = 3
         nodes = list(possible_attacks(board, self.player_name))
 
         if len(nodes) == 0:
             return EndTurnCommand()
 
-        attack_probs = []
+        nodes_scores = []
         for source, target in nodes:
             attack_dice = source.get_dice()
             defender_dice = target.get_dice()
-            attack_probs.append(attack_succcess_probability(attack_dice, defender_dice))
-
-        nodes_scores = []
-        for i, (source, target) in enumerate(nodes):
-            node_score = attack_probs[i] * self.expectiMiniMax(source, target, attack_probs[i], depth - 1, board)
+            attack_prob = attack_succcess_probability(attack_dice, defender_dice)
+            node_score = attack_prob * self.expectiMiniMax(source, target, attack_prob, depth - 1, board, self.player_name, nb_moves_this_turn)
             nodes_scores.append(node_score)
 
-        node_to_attack = nodes[np.argmax(nodes_scores)]
+        max_index = np.argmax(nodes_scores)
 
+        # Maybe useless?
+        if nodes_scores[np.argmax(nodes_scores)] < 0.1:
+            return EndTurnCommand()
+
+        node_to_attack = nodes[max_index]
         return BattleCommand(node_to_attack[0].get_name(), node_to_attack[1].get_name())
 
-    def expectiMiniMax(self, source, target, attack_prob, depth, board):
+    def expectiMiniMax(self, source, target, attack_prob, depth, board, current_player, current_moves):
+        # Maybe only less than
+        if target.get_dice() > source.get_dice():
+            return 0
+        if current_moves == 4:
+            pass
         if depth == 0:
             return self.get_score(board) * attack_prob
 
@@ -63,7 +66,7 @@ class FinalAI:
         source_area_dice = source_area.get_dice()
         target_area_owner = target_area.get_owner_name()
         target_area_dice = target_area.get_dice()
-        target_area.set_owner(source.get_owner_name())
+        target_area.set_owner(current_player)
         
         target_area.set_dice(source_area.get_dice() - 1)
         source_area.set_dice(1)
@@ -84,7 +87,7 @@ class FinalAI:
             attack_dice = source_node.get_dice()
             defender_dice = target_node.get_dice()
             attack_prob = attack_succcess_probability(attack_dice, defender_dice)
-            nodes_scores.append(self.expectiMiniMax(source_node, target_node, attack_prob, depth - 1, board))
+            nodes_scores.append(self.expectiMiniMax(source_node, target_node, attack_prob, depth-1, board, current_player, current_moves+1))
 
         #undo move
         target_area.set_owner(target_area_owner)
