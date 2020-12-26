@@ -1,7 +1,7 @@
 import logging
 from random import shuffle
 import numpy as np
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from ..utils import possible_attacks, attack_succcess_probability, probability_of_holding_area
 
@@ -58,12 +58,13 @@ class FinalAI:
             return self.get_score(board) * attack_prob
 
         #do move
-        source_area = board.get_area(source.get_name())
-        target_area = board.get_area(target.get_name())
+        source_area = source
+        target_area = target
         source_area_dice = source_area.get_dice()
         target_area_owner = target_area.get_owner_name()
         target_area_dice = target_area.get_dice()
-        target_area.set_owner(self.player_name)
+        target_area.set_owner(source.get_owner_name())
+        
         target_area.set_dice(source_area.get_dice() - 1)
         source_area.set_dice(1)
 
@@ -78,15 +79,12 @@ class FinalAI:
             return score
 
         #calculate attack probs
-        attack_probs = []
-        for source, target in nodes:
-            attack_dice = source.get_dice()
-            defender_dice = target.get_dice()
-            attack_probs.append(attack_succcess_probability(attack_dice, defender_dice))
-
         nodes_scores = []
-        for i, (source, target) in enumerate(nodes):
-            nodes_scores.append(self.expectiMiniMax(source, target, attack_probs[i], depth - 1, board))
+        for source_node, target_node in nodes:
+            attack_dice = source_node.get_dice()
+            defender_dice = target_node.get_dice()
+            attack_prob = attack_succcess_probability(attack_dice, defender_dice)
+            nodes_scores.append(self.expectiMiniMax(source_node, target_node, attack_prob, depth - 1, board))
 
         #undo move
         target_area.set_owner(target_area_owner)
@@ -98,6 +96,9 @@ class FinalAI:
     def get_score(self, board):
         players_regions = board.get_players_regions(self.player_name, skip_area=None)
         max_region_size = max(len(region) for region in players_regions)
+        player_areas_size = len(board.get_player_areas(self.player_name)) // 2
+
+        # max_region_size = max(self.get_region_score(board, region) for region in players_regions)
 
         #players = list(set(area.get_owner_name() for area in board.areas.values()))
         #players.remove(self.player_name)
@@ -113,5 +114,23 @@ class FinalAI:
         #probab_holding = probability_of_holding_area(atk_area, target_area)
 
         #return max_region_size - max_region
+        # return max_region_size + player_areas_size
         return max_region_size
         #return probab_holding
+        
+    def get_region_score(self, board, region):
+        score = 0
+        for area_id in region:
+            area_score = 0
+            area = board.get_area(area_id)
+            area_score += area.get_dice()
+            if board.is_at_border(area):
+                for adj_name in area.get_adjacent_areas():
+                    adj_area = board.get_area(adj_name)
+                    if adj_area.get_owner_name() != self.player_name and adj_area.get_dice() - 2 > area.get_dice():
+                        area_score -= adj_area.get_dice() // 2
+            if len(area.get_adjacent_areas()) <= 3:
+                area_score += area.get_dice() // 2
+                
+            score += area_score
+            return score
