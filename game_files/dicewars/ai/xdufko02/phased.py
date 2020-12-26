@@ -39,7 +39,7 @@ class FinalAI:
             attack_dice = source.get_dice()
             defender_dice = target.get_dice()
             attack_prob = attack_succcess_probability(attack_dice, defender_dice)
-            node_score = attack_prob * self.expectiMiniMax(source, target, attack_prob, depth - 1, board, self.player_name, nb_moves_this_turn)
+            node_score = self.expectiMiniMax(source, target, attack_prob, board, self.player_name, nb_moves_this_turn, True)
             nodes_scores.append(node_score)
 
         max_index = np.argmax(nodes_scores)
@@ -51,15 +51,20 @@ class FinalAI:
         node_to_attack = nodes[max_index]
         return BattleCommand(node_to_attack[0].get_name(), node_to_attack[1].get_name())
 
-    def expectiMiniMax(self, source, target, attack_prob, depth, board, current_player, current_moves):
+    def expectiMiniMax(self, source, target, attack_prob, board, current_player, current_moves, first):
         # Maybe only less than
-        if target.get_dice() > source.get_dice():
-            return 0
-        if current_moves == 4:
-            pass
-        if depth == 0:
-            return self.get_score(board) * attack_prob
-
+        if first == False and self.player_name == current_player:
+            return self.get_score(board, current_player) * attack_prob
+        if current_moves == 4 or target.get_dice() > source.get_dice():
+            nodes_scores = []
+            nodes_to_attack = list(possible_attacks(board, self.get_next_player(current_player, board)))
+            # Next player is playing
+            for next_source, next_target in nodes_to_attack:
+                attack_prob = attack_succcess_probability(next_source.get_dice(), next_target.get_dice())
+                node_score = attack_prob * self.expectiMiniMax(source, target, attack_prob, board, self.get_next_player(current_player, board), 0, False)
+                nodes_scores.append(node_score)
+            return max(nodes_scores) * attack_prob
+            
         #do move
         source_area = source
         target_area = target
@@ -74,7 +79,7 @@ class FinalAI:
         nodes = list(possible_attacks(board, self.player_name))
 
         if len(nodes) == 0:
-            score = self.get_score(board) * attack_prob
+            score = self.get_score(board, current_player) * attack_prob
             #undo move
             target_area.set_owner(target_area_owner)
             target_area.set_dice(target_area_dice)
@@ -87,7 +92,21 @@ class FinalAI:
             attack_dice = source_node.get_dice()
             defender_dice = target_node.get_dice()
             attack_prob = attack_succcess_probability(attack_dice, defender_dice)
-            nodes_scores.append(self.expectiMiniMax(source_node, target_node, attack_prob, depth-1, board, current_player, current_moves+1))
+            node_score = self.expectiMiniMax(source_node, target_node, attack_prob, board, current_player, current_moves + 1, False)
+            nodes_scores.append(node_score)
+            # if node_score < 0.1:
+            #     next_scores = []
+            #     nodes_to_attack = list(possible_attacks(board, self.get_next_player(current_player)))
+            #     # Next player is playing
+            #     print("LEN: ", len(nodes_to_attack))
+            #     for next_source, next_target in nodes_to_attack:
+            #         attack_prob = attack_succcess_probability(next_source.get_dice(), next_target.get_dice())
+            #         next_score = attack_prob * self.expectiMiniMax(source, target, attack_prob, board, self.get_next_player(current_player), 0, False)
+            #         # next_scores.append(next_scores)
+            #         nodes_scores.append(next_score)
+                
+
+
 
         #undo move
         target_area.set_owner(target_area_owner)
@@ -96,8 +115,8 @@ class FinalAI:
 
         return max(nodes_scores) * attack_prob
 
-    def get_score(self, board):
-        players_regions = board.get_players_regions(self.player_name, skip_area=None)
+    def get_score(self, board, current_player):
+        players_regions = board.get_players_regions(current_player, skip_area=None)
         max_region_size = max(len(region) for region in players_regions)
         player_areas_size = len(board.get_player_areas(self.player_name)) // 2
 
@@ -137,3 +156,11 @@ class FinalAI:
                 
             score += area_score
             return score
+
+    def get_next_player(self, current_player, board):
+        count = 1
+        while True:
+            next_player = self.order[(self.order.index(current_player) + 1)%len(self.order)]
+            if len(board.get_player_areas(next_player)) > 0:
+                break
+        return next_player

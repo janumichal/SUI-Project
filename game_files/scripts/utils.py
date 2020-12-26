@@ -212,6 +212,8 @@ class EvaluationCombatantsProvider:
         self.game_numbers = np.zeros((len(players), len(players)), dtype=np.int)
         self.players = players
         self.put = ai_under_test
+        print(self.players)
+        print(self.put)
         assert(self.put in self.players)
 
     def get_combatants(self, nb_combatants):
