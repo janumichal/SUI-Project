@@ -31,7 +31,9 @@ class FinalAI:
             self.turns = self.expectiMiniMax(deepcopy(board), self.player_name, True)
         while len(self.turns) > 0:
             turn = self.turns.pop(0)
-            if turn[0].get_dice() > 1:
+            real_source = board.get_area(turn[0].get_name())
+            if real_source.get_dice() <= 1 or real_source.get_owner_name() != self.player_name:
+                print("SKIP")
                 continue
             return BattleCommand(turn[0].get_name(), turn[1].get_name())
         return EndTurnCommand()
@@ -50,6 +52,8 @@ class FinalAI:
                     if len(attacks) == 0:
                         break
                     random_attack = random.choice(attacks)
+                    # print("DICE ",random_attack[0].get_dice(), " ", random_attack[1].get_dice())
+
                     self.capture_node(random_attack[0], random_attack[1])
                     real_turns.append(random_attack)
 
@@ -57,7 +61,11 @@ class FinalAI:
                 turns.append(real_turns)
                 if len(probabilities) == 0:
                     return []
-                return turns[np.argmax(probabilities)]
+                return_values = turns[np.argmax(probabilities)]
+                # for val in return_values:
+                #     print("DICE ",val[0].get_dice(), " ", val[1].get_dice())
+
+                return return_values
         else:
             new_board = deepcopy(board)
             for x in range(3):
