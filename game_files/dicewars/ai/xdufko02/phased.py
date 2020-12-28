@@ -33,7 +33,6 @@ class FinalAI:
             turn = self.turns.pop(0)
             real_source = board.get_area(turn[0].get_name())
             if real_source.get_dice() <= 1 or real_source.get_owner_name() != self.player_name:
-                print("SKIP")
                 continue
             return BattleCommand(turn[0].get_name(), turn[1].get_name())
         return EndTurnCommand()
@@ -86,9 +85,17 @@ class FinalAI:
 
     def get_score(self, board, current_player):
         players_regions = board.get_players_regions(current_player, skip_area=None)
-        max_region_size = max(len(region) for region in players_regions)
-
-        return max_region_size
+        max_size = 0
+        for region in players_regions:
+            max_size = max(max_size, len(region))
+        # max_region_size = max(len(region) for region in players_regions)
+        # score = 0
+        # all_player_areas = board.get_player_areas(current_player)
+        # for area in all_player_areas:
+        #     score += probability_of_holding_area(board, area.get_name(), area.get_dice(), current_player)
+        # return score
+        return max_size
+        # return len(all_player_areas)
 
     def get_next_player(self, current_player, board):
         count = 1
