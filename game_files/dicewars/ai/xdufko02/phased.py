@@ -51,8 +51,6 @@ class FinalAI:
                     if len(attacks) == 0:
                         break
                     random_attack = random.choice(attacks)
-                    # print("DICE ",random_attack[0].get_dice(), " ", random_attack[1].get_dice())
-
                     self.capture_node(random_attack[0], random_attack[1])
                     real_turns.append(random_attack)
 
@@ -61,8 +59,6 @@ class FinalAI:
                 if len(probabilities) == 0:
                     return []
                 return_values = turns[np.argmax(probabilities)]
-                # for val in return_values:
-                #     print("DICE ",val[0].get_dice(), " ", val[1].get_dice())
 
                 return return_values
         else:
@@ -88,14 +84,8 @@ class FinalAI:
         max_size = 0
         for region in players_regions:
             max_size = max(max_size, len(region))
-        # max_region_size = max(len(region) for region in players_regions)
-        # score = 0
-        # all_player_areas = board.get_player_areas(current_player)
-        # for area in all_player_areas:
-        #     score += probability_of_holding_area(board, area.get_name(), area.get_dice(), current_player)
-        # return score
+
         return max_size
-        # return len(all_player_areas)
 
     def get_next_player(self, current_player, board):
         count = 1
@@ -104,7 +94,6 @@ class FinalAI:
             if len(board.get_player_areas(next_player)) > 0:
                 break
             count+=1
-        # print("x: ", next_player, " ", current_player)
         return next_player
     
     def get_good_attacks(self, board, player):
